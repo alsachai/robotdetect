@@ -41,7 +41,10 @@ def setup_camera():
     mvsdk.CameraSetAeState(hCamera, 0)
     mvsdk.CameraSetExposureTime(hCamera, 30 * 1000)
     mvsdk.CameraSetGamma(hCamera, 40)
-    # logger.debug(mvsdk.CameraGetGamma(hCamera))
+    # mvsdk.CameraSetContrast(hCamera, 80)
+    # mvsdk.CameraSetSaturation(hCamera, 40)
+    # mvsdk.CameraSetSharpness(49)
+    logger.debug(mvsdk.CameraGetAeExposureRange(hCamera))
 
     # 旋转图像
     mvsdk.CameraSetRotate(hCamera, 1)
