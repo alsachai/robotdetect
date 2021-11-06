@@ -40,7 +40,7 @@ def setup_camera():
     # 手动曝光，曝光时间30ms
     mvsdk.CameraSetAeState(hCamera, 0)
     mvsdk.CameraSetExposureTime(hCamera, 30 * 1000)
-    mvsdk.CameraSetGamma(hCamera, 40)
+    # mvsdk.CameraSetGamma(hCamera, 40)
     # mvsdk.CameraSetContrast(hCamera, 80)
     # mvsdk.CameraSetSaturation(hCamera, 40)
     # mvsdk.CameraSetSharpness(49)
