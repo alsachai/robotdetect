@@ -38,16 +38,20 @@ def setup_camera():
     mvsdk.CameraSetTriggerMode(hCamera, 0)
 
     # 手动曝光，曝光时间30ms
-    mvsdk.CameraSetAeState(hCamera, 0)
-    mvsdk.CameraSetExposureTime(hCamera, 30 * 1000)
-    mvsdk.CameraSetGamma(hCamera, 40)
+    # mvsdk.CameraSetAeState(hCamera, 0)
+    # mvsdk.CameraSetExposureTime(hCamera, 30 * 1000)
+    # mvsdk.CameraSetGamma(hCamera, 40)
     # mvsdk.CameraSetContrast(hCamera, 80)
     # mvsdk.CameraSetSaturation(hCamera, 40)
     # mvsdk.CameraSetSharpness(49)
-    # logger.debug(mvsdk.CameraGetAeExposureRange(hCamera))
-
+    # mvsdk.CameraSetWhiteLevel(hCamera, 100)
+    # mvsdk.CameraSetBlackLevel(hCamera, 199)
+    # mvsdk.CameraSetLightFrequency(hCamera, 100)
+    # logger.debug(f"OUTPUT: {mvsdk.CameraGetWhiteLevel(hCamera)}")
+    # logger.debug(f"OUTPUT: {mvsdk.CameraGetBlackLevel(hCamera)}")
+    # logger.debug(f"OUTPUT: {mvsdk.CameraGetLightFrequency(hCamera)}")
     # 旋转图像
-    mvsdk.CameraSetRotate(hCamera, 1)
+    # mvsdk.CameraSetRotate(hCamera, 1)
 
     # 让SDK内部取图线程开始工作
     mvsdk.CameraPlay(hCamera)
