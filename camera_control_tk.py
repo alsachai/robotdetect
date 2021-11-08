@@ -28,6 +28,7 @@ class Controller(object):
         self.real_time_image = self.get_one_picture()
 
     def get_one_picture(self):
+        # get one frame from camera
         pRawData, FrameHead = mvsdk.CameraGetImageBuffer(self.hCamera, 200)
         mvsdk.CameraImageProcess(self.hCamera, pRawData, self.pFrameBuffer, FrameHead)
         mvsdk.CameraReleaseImageBuffer(self.hCamera, pRawData)
