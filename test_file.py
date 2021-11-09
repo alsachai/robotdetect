@@ -1,44 +1,157 @@
-import PySimpleGUI as sg
-import cv2
+from tkinter import *
+import threading
+import os
 
-"""
-    Demonstration of how to use a GRAPH ELEMENT to draw a webcam stream using OpenCV and PySimpleGUI.
-    Additionally, the thing this demo is really showcasing, is the ability to draw over the top of this
-    webcam stream, as it's being displayed.  To "Draw" simply move your mouse over the image, left click and hold, and
-    then drag your mouse.  You'll see a series of red circles on top of your image.
-    CURRENTLY ONLY WORKS WITH PySimpleGUI, NOT any of the other ports at this time.
+class Dialog(Toplevel):
 
-    Note also that this demo is using ppm as the image format.  This worked fine on all PySimpleGUI ports except 
-    the web port.  If you have trouble with the imencode statement, change "ppm" to "png"
+    def __init__(self, parent, title = None):
 
-    Copyright 2021 PySimpleGUI
-"""
+        Toplevel.__init__(self, parent)
+        self.transient(parent)
 
+        if title:
+            self.title(title)
 
-def main():
-    layout = [[sg.Graph((600, 450), (0, 450), (600, 0), key='-GRAPH-', enable_events=True, drag_submits=True)], ],
+        self.parent = parent
 
-    window = sg.Window('Demo Application - OpenCV Integration', layout)
-    graph_elem = window['-GRAPH-']  # type: sg.Graph
-    a_id = None
-    # ---===--- Event LOOP Read and display frames, operate the GUI --- #
-    cap = cv2.VideoCapture(0)
-    while True:
-        event, values = window.read(timeout=0)
-        if event in ('Exit', None):
-            break
+        self.result = None
+        body = Frame(self)
+        self.initial_focus = self.body(body)
+        body.pack(padx=5, pady=5)
 
-        ret, frame = cap.read()
-        imgbytes = cv2.imencode('.ppm', frame)[1].tobytes()  # on some ports, will need to change to png
-        if a_id:
-            graph_elem.delete_figure(a_id)  # delete previous image
-        a_id = graph_elem.draw_image(data=imgbytes, location=(0, 0))  # draw new image
-        graph_elem.send_figure_to_back(a_id)  # move image to the "bottom" of all other drawings
+        #self.buttonbox()
 
-        if event == '-GRAPH-':
-            graph_elem.draw_circle(values['-GRAPH-'], 5, fill_color='red', line_color='red')
+        self.grab_set()
 
-    window.close()
+        if not self.initial_focus:
+            self.initial_focus = self
 
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
 
-main()
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+
+        self.initial_focus.focus_set()
+
+        self.wait_window(self)
+
+    #
+    # construction hooks
+
+    def body(self, master):
+        # create dialog body.  return widget that should have
+        # initial focus.  this method should be overridden
+
+        pass
+
+    def buttonbox(self):
+        # add standard button box. override if you don't want the
+        # standard buttons
+
+        box = Frame(self)
+
+        w = Button(box, text="OK", width=10, command=self.ok, default=ACTIVE)
+        w.pack(side=LEFT, padx=5, pady=5)
+        w = Button(box, text="Cancel", width=10, command=self.cancel)
+        w.pack(side=LEFT, padx=5, pady=5)
+
+        self.bind("<Return>", self.ok)
+        self.bind("<Escape>", self.cancel)
+
+        box.pack()
+
+    #
+    # standard button semantics
+
+    def ok(self, event=None):
+
+        if not self.validate():
+            self.initial_focus.focus_set() # put focus back
+            return
+
+        self.withdraw()
+        self.update_idletasks()
+
+        self.apply()
+
+        self.cancel()
+
+    def cancel(self, event=None):
+
+        # put focus back to the parent window
+        self.parent.focus_set()
+        self.destroy()
+
+    #
+    # command hooks
+
+    def validate(self):
+
+        return 1 # override
+
+    def apply(self):
+
+        pass # override
+
+class MyDialog(Dialog):
+
+    def body(self, master):
+       master.grid_columnconfigure(0, weight=1)
+       self.e1 = Entry(master)
+       self.e1.grid(column=0,row=0,columnspan = 4)
+       self.buttons = {}
+       self.buttons['previous'] = Button(master,text =u'/')
+       self.buttons['previous'].grid(column=0,row =1,columnspan = 2)
+
+       self.buttons['next'] = Button(master,text =u'*')
+       self.buttons['next'].grid(column=2,row =1,columnspan = 2)
+
+       self.buttons['minus'] = Button(master,text =u'-')
+       self.buttons['minus'].grid(column=3,row =2)
+
+       self.buttons['plus'] = Button(master,text =u'+')
+       self.buttons['plus'].grid(column=3,row =3)
+
+       self.buttons['enter'] = Button(master,text =u'Enter')
+       self.buttons['enter'].grid(column=3,row =4,rowspan = 2)
+
+       self.buttons['zero'] = Button(master,text =u'0')
+       self.buttons['zero'].grid(column=0,row =5)
+
+       self.buttons['del'] = Button(master,text =u'←')
+       self.buttons['del'].grid(column=1,row =5)
+       rows = range(4,1,-1)
+       columns = range(0,3)
+
+       i = 1
+       for row in rows:
+              for column in columns:
+                     Button(master,text = i).grid(row= row,column = column)
+                     i+=1
+       return self.e1 # initial focus
+
+def leftClick():
+        print('add one')
+
+def longerClick(): #if the timer ends this will run
+              d = MyDialog(master) #create dialog
+              print('longerClick')
+
+def handleButtonPress(event):
+              global t
+              t = threading.Timer(0.8,longerClick) #setTimer
+              t.start()
+              print(t)
+def handleButtonRelease(event): #here is a problem probably
+              global t
+              t.cancel()
+              leftClick()
+
+master = Tk()
+t = None
+master.geometry('{}x{}'.format(300, 300))
+button = Button(master, text = 'Stlac')
+button.pack()
+button.bind('<ButtonPress-1>',handleButtonPress)
+button.bind('<ButtonRelease-1>',handleButtonRelease)
+mainloop()
