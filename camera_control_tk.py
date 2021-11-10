@@ -13,14 +13,31 @@ import time
 ## X: [150, 350] Y: [0,80]
 timer = None
 
+left_bottom = [300, 0]
+right_top = [150, 65]
+screen_left_bottom = [39, 633]
+screen_right_top = [282, 38]
+left_padding = screen_left_bottom[0]
+top_padding = screen_right_top[1]
+offset = 2
+
+class Step(object):
+    def __init__(self, action, x, y, x_fix, y_fix):
+        self.action = action
+        self.x = x
+        self.y = y
+        self.x_fix = x_fix
+        self.y_fix = y_fix
+
 class Controller(object):
     def __init__(self):
         self.root = tk.Tk()
         self.root.minsize(580, 740)
         self.root.title('Controller')
+        self.steps = list()
         self.robot = RobotController()
         self.robot.reset()
-        self.my_font = tkinter.font.Font(family='微软雅黑', size=15)
+        self.my_font = tkinter.font.Font(family='微软雅黑', size=10)
         self.log_font = tkinter.font.Font(family='微软雅黑', size=10)
         self.hCamera, self.pFrameBuffer = setup_camera()
         self.record_flag = False
@@ -37,7 +54,6 @@ class Controller(object):
         self.image = ImageTk.PhotoImage(self.image_open)
         thread1 = CreateThreading(1, "Thread-1", 1, self.update)
         thread1.start()
-
 
     def get_one_picture(self):
         # get one frame from camera
@@ -75,6 +91,30 @@ class Controller(object):
             self.log.set("End Recording")
         logger.debug(self.record_flag)
 
+    def replay(self):
+        self.record_flag = False
+        if len(self.steps) == 0:
+            logger.debug("Empty Steps")
+            return
+        logger.debug("Start Replay")
+        thread1 = CreateThreading(2, "Thread-2", 2, self.__replay)
+        thread1.start()
+
+    def __replay(self):
+        steps = self.steps
+        for step in steps:
+            logger.debug(f"REPLAY Action: {step.action} {step.x_fix} {step.y_fix}")
+            if step.action == "Click":
+                self.robot.click([step.x_fix, step.y_fix, 60])
+            elif step.action == "LongPress":
+                self.robot.longPress([step.x_fix, step.y_fix, 60])
+        logger.debug("Replay Completed")
+
+    def clean_steps(self):
+        self.steps = []
+        self.log.set('')
+        logger.debug("Steps Reset")
+
     def handleButtonPress(self, event):
         global timer
         # timer = threading.Timer(0.8, self.longpress_callback(event))
@@ -88,14 +128,24 @@ class Controller(object):
         else:
             self.click_callback(event)
 
+    def coordinate_fix(self, x, y):
+        true_screen_length = left_bottom[0] - right_top[0]
+        true_screen_width = right_top[1] - left_bottom[1]
+        screen_length = screen_left_bottom[1] - screen_right_top[1]
+        screen_width = screen_right_top[0] - screen_left_bottom[0]
+        x_coor = right_top[0] + int(((y-top_padding) / screen_length) * true_screen_length) + offset # x_coor from 150 to 300
+        y_coor = int(((x-left_padding) / screen_width) * true_screen_width) # y_coor from 0 to 65
+        return x_coor, y_coor
+
     def click_callback(self, event):
         x, y = event.x, event.y
         old_str = self.log.get()
         strs = f"Action: Click  X: {x}  Y: {y}"
         self.log.set(old_str + '\n' + strs)
-        x_coor = int((x / 480) * 350) + 150
-        y_coor = int((y / 640) * 80)
-        self.robot.click([x_coor, y_coor, 60])
+        x_fix, y_fix = self.coordinate_fix(x, y)
+        if self.record_flag:
+            self.steps.append(Step("Click", x, y, x_fix, y_fix))
+        self.robot.click([x_fix, y_fix, 60])
 
     def doubleclick_callback(self, event):
         pass
@@ -105,9 +155,11 @@ class Controller(object):
         old_str = self.log.get()
         strs = f"Action: LongPress  X: {x}  Y: {y}"
         self.log.set(old_str + '\n' + strs)
-        x_coor = int((x / 480) * 350) + 150
-        y_coor = int((y / 640) * 80)
-        self.robot.longPress([x_coor, y_coor, 60])
+        self.log.set(old_str + '\n' + strs)
+        x_fix, y_fix = self.coordinate_fix(x, y)
+        if self.record_flag:
+            self.steps.append(Step("LongPress", x, y, x_fix, y_fix))
+        self.robot.longPress([x_fix, y_fix, 60])
 
     def update(self):
         self.real_time_image = self.get_one_picture()
@@ -121,13 +173,17 @@ class Controller(object):
         input_bg = "#393943"
         num_fg = "#DCDCDC"
         btn_w = 173
-        btn_h = 50
+        btn_h = 25
 
         btn_re = tk.Button(self.root, text='Record', font=self.my_font, bg=btn_bg, fg=btn_fg, bd=0,
                            command=lambda: self.change_record_status())
         btn_re.place(x=btn_w * 0, y=0, width=btn_w, height=btn_h)
-        btn_pl = tk.Button(self.root, text="Replay", font=self.my_font, bg=btn_bg, fg=btn_fg, bd=0)
+        btn_pl = tk.Button(self.root, text="Replay", font=self.my_font, bg=btn_bg, fg=btn_fg, bd=0,
+                           command=lambda: self.replay())
         btn_pl.place(x=btn_w * 1, y=0, width=btn_w, height=btn_h)
+        btn_cr = tk.Button(self.root, text="Reset Record Steps", font=self.my_font, bg=btn_bg, fg=btn_fg, bd=0,
+                           command=lambda: self.clean_steps())
+        btn_cr.place(x=0, y=btn_h * 1, width=btn_w * 2, height=btn_h)
 
         label = tk.Label(self.root, font=self.log_font, bg=input_bg, bd='9', fg=num_fg, anchor='nw',
                          textvariable=self.log)
