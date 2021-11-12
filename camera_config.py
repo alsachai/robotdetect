@@ -52,6 +52,7 @@ def setup_camera():
     # logger.debug(f"OUTPUT: {mvsdk.CameraGetLightFrequency(hCamera)}")
     # 旋转图像
     # mvsdk.CameraSetRotate(hCamera, 1)
+    mvsdk.CameraReadParameterFromFile(hCamera, "test.Config")
 
     # 让SDK内部取图线程开始工作
     mvsdk.CameraPlay(hCamera)
@@ -61,6 +62,6 @@ def setup_camera():
 
     # 分配RGB buffer，用来存放ISP输出的图像
     # 备注：从相机传输到PC端的是RAW数据，在PC端通过软件ISP转为RGB数据（如果是黑白相机就不需要转换格式，但是ISP还有其它处理，所以也需要分配这个buffer）
-    pFrameBuffer = mvsdk.CameraAlignMalloc(FrameBufferSize, 16)
+    pFrameBuffer = mvsdk.CameraAlignMalloc(FrameBufferSize, 32)
 
     return hCamera, pFrameBuffer

@@ -9,6 +9,7 @@ import numpy as np
 import cv2
 from robot_control import RobotController
 import time
+import json
 
 ## X: [150, 350] Y: [0,80]
 timer = None
@@ -22,12 +23,24 @@ top_padding = screen_right_top[1]
 offset = 2
 
 class Step(object):
-    def __init__(self, action, x, y, x_fix, y_fix):
+    def __init__(self, action, x, y, x_fix, y_fix, screenshot_name):
         self.action = action
         self.x = x
         self.y = y
         self.x_fix = x_fix
         self.y_fix = y_fix
+        self.screenshot_name = screenshot_name
+
+    def json_output(self):
+        output = {
+            "action": self.action,
+            "x": self.x,
+            "y": self.y,
+            "x_fix": self.x_fix,
+            "y_fix": self.y_fix,
+            "screenshot_name": self.screenshot_name
+        }
+        return output
 
 class Controller(object):
     def __init__(self):
@@ -48,7 +61,6 @@ class Controller(object):
         self.canvas.place(x=0, y=50)
         self.canvas.bind("<Button-1>", self.handleButtonPress)
         self.canvas.bind('<ButtonRelease-1>', self.handleButtonRelease)
-        self.im = self.get_one_picture()
 
         self.image_open = Image.open("2.png")
         self.image = ImageTk.PhotoImage(self.image_open)
@@ -70,9 +82,6 @@ class Controller(object):
         frame = frame[400:2700, 204:1364]
         # image_writer = Image.fromarray(frame).save(f"test-{time.time()}.jpg", quality=95, subsampling=0)
         # logger.debug(Image.fromarray(frame).size)
-        frame = cv2.resize(frame, (348, 690), interpolation=cv2.INTER_CUBIC)
-        # frame = frame[::, 50:350]
-        frame = ImageTk.PhotoImage(Image.fromarray(frame))
         return frame
 
     def on_closing(self):
@@ -88,6 +97,15 @@ class Controller(object):
             self.log.set("Start Recording")
         else:
             self.record_flag = False
+            if len(self.steps) > 0:
+                output_str = {
+                    "steps": list()
+                }
+                for step in self.steps:
+                    output_str['steps'].append(step.json_output())
+                output_str_json = json.dumps(output_str, indent=4).encode('utf-8').decode('utf-8')
+                with open('steps.json', 'w') as f:
+                    print(output_str_json, file = f)
             self.log.set("End Recording")
         logger.debug(self.record_flag)
 
@@ -109,6 +127,12 @@ class Controller(object):
             elif step.action == "LongPress":
                 self.robot.longPress([step.x_fix, step.y_fix, 60])
         logger.debug("Replay Completed")
+
+    def thread_robot_play(self, action, x, y, z):
+        if action == "Click":
+            self.robot.click([x, y, z])
+        elif action == "LongPress":
+            self.robot.longPress([x, y, z])
 
     def clean_steps(self):
         self.steps = []
@@ -133,7 +157,7 @@ class Controller(object):
         true_screen_width = right_top[1] - left_bottom[1]
         screen_length = screen_left_bottom[1] - screen_right_top[1]
         screen_width = screen_right_top[0] - screen_left_bottom[0]
-        x_coor = right_top[0] + int(((y-top_padding) / screen_length) * true_screen_length) + offset # x_coor from 150 to 300
+        x_coor = right_top[0] + int(((y-top_padding) / screen_length) * true_screen_length) # x_coor from 150 to 300
         y_coor = int(((x-left_padding) / screen_width) * true_screen_width) # y_coor from 0 to 65
         return x_coor, y_coor
 
@@ -143,9 +167,16 @@ class Controller(object):
         strs = f"Action: Click  X: {x}  Y: {y}"
         self.log.set(old_str + '\n' + strs)
         x_fix, y_fix = self.coordinate_fix(x, y)
+        frame = self.get_one_picture()
+        save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
         if self.record_flag:
-            self.steps.append(Step("Click", x, y, x_fix, y_fix))
-        self.robot.click([x_fix, y_fix, 60])
+            step = Step("Click", x, y, x_fix, y_fix, save_name)
+            self.steps.append(step)
+            image_writer = Image.fromarray(frame).save(save_name, quality=95, subsampling=0)
+            logger.debug("Click Image Saved")
+        thread3 = threading.Thread(name = "Thread-3", target = self.thread_robot_play, args = ("Click", x_fix, y_fix, 60))
+        thread3.start()
+        # self.robot.click([x_fix, y_fix, 60])
 
     def doubleclick_callback(self, event):
         pass
@@ -157,14 +188,23 @@ class Controller(object):
         self.log.set(old_str + '\n' + strs)
         self.log.set(old_str + '\n' + strs)
         x_fix, y_fix = self.coordinate_fix(x, y)
+        frame = self.get_one_picture()
+        save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
         if self.record_flag:
-            self.steps.append(Step("LongPress", x, y, x_fix, y_fix))
-        self.robot.longPress([x_fix, y_fix, 60])
+            step = Step("LongPress", x, y, x_fix, y_fix, save_name)
+            self.steps.append(step)
+            image_writer = Image.fromarray(frame).save(save_name, quality=95, subsampling=0)
+            logger.debug("LongPress Image Saved")
+        thread4 = threading.Thread(name="Thread-4", target=self.thread_robot_play, args=("LongPress", x_fix, y_fix, 60))
+        thread4.start()
+        # self.robot.longPress([x_fix, y_fix, 60])
 
     def update(self):
-        self.real_time_image = self.get_one_picture()
-        im = self.real_time_image
-        self.canvas.create_image(0, 0, anchor="nw", image=im)
+        frame = self.get_one_picture()
+        frame = cv2.resize(frame, (348, 690), interpolation=cv2.INTER_CUBIC)
+        frame = ImageTk.PhotoImage(Image.fromarray(frame))
+        self.real_time_image = frame
+        self.canvas.create_image(0, 0, anchor="nw", image=self.real_time_image)
         self.root.after(100, self.update)
 
     def main(self):
