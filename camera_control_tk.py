@@ -79,7 +79,7 @@ class Controller(object):
             (FrameHead.iHeight, FrameHead.iWidth, 1 if FrameHead.uiMediaType == mvsdk.CAMERA_MEDIA_TYPE_MONO8 else 3))
 
         frame = cv2.flip(frame, 1, dst=None)
-        frame = frame[400:2700, 204:1364]
+        frame = frame[400:2700, 204:1364] # width: 1160 height: 2300
         # image_writer = Image.fromarray(frame).save(f"test-{time.time()}.jpg", quality=95, subsampling=0)
         # logger.debug(Image.fromarray(frame).size)
         return frame
@@ -201,7 +201,7 @@ class Controller(object):
 
     def update(self):
         frame = self.get_one_picture()
-        frame = cv2.resize(frame, (348, 690), interpolation=cv2.INTER_CUBIC)
+        frame = cv2.resize(frame, (348, 696), interpolation=cv2.INTER_CUBIC)
         frame = ImageTk.PhotoImage(Image.fromarray(frame))
         self.real_time_image = frame
         self.canvas.create_image(0, 0, anchor="nw", image=self.real_time_image)
