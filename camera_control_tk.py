@@ -10,17 +10,18 @@ import cv2
 from robot_control import RobotController
 import time
 import json
+from utils import send_requests, coordinate_fix, replay_config, search_contain_box, base64_encode
 
 ## X: [150, 350] Y: [0,80]
 timer = None
 
-left_bottom = [300, 0]
-right_top = [150, 65]
-screen_left_bottom = [39, 633]
-screen_right_top = [282, 38]
-left_padding = screen_left_bottom[0]
-top_padding = screen_right_top[1]
-offset = 2
+record_config = {
+    "left_bottom": [300, 0],
+    "right_top": [150, 65],
+    "screen_left_bottom": [39, 633],
+    "screen_right_top": [282, 38],
+    "offset": 2
+}
 
 class Step(object):
     def __init__(self, action, x, y, x_fix, y_fix, screenshot_name):
@@ -48,6 +49,7 @@ class Controller(object):
         self.root.minsize(580, 740)
         self.root.title('Controller')
         self.steps = list()
+        self.record_config = record_config
         self.robot = RobotController()
         self.robot.reset()
         self.my_font = tkinter.font.Font(family='微软雅黑', size=10)
@@ -122,10 +124,20 @@ class Controller(object):
         steps = self.steps
         for step in steps:
             logger.debug(f"REPLAY Action: {step.action} {step.x_fix} {step.y_fix}")
+            record_figure_base64 = base64_encode(step.screenshot_name)
+            realtime_image = Image.fromarray(self.get_one_picture()).save(f"tmp.jpg", quality=95, subsampling=0)
+            replay_figure_base64 = base64_encode("tmp.jpg")
+            logger.debug("sending matching request")
+            pair_result = send_requests(record_figure_base64, replay_figure_base64)
+            logger.debug("matching request received")
+            # logger.debug(f"{type(step)}")
+            pair_x, pair_y = search_contain_box(step.x, step.y, pair_result, step.screenshot_name)
+            pair_x, pair_y = coordinate_fix(pair_x, pair_y, replay_config)
             if step.action == "Click":
-                self.robot.click([step.x_fix, step.y_fix, 60])
+                self.robot.click([pair_x, pair_y, 60])
             elif step.action == "LongPress":
-                self.robot.longPress([step.x_fix, step.y_fix, 60])
+                self.robot.longPress([pair_x, pair_y, 60])
+            time.sleep(2)
         logger.debug("Replay Completed")
 
     def thread_robot_play(self, action, x, y, z):
@@ -152,25 +164,16 @@ class Controller(object):
         else:
             self.click_callback(event)
 
-    def coordinate_fix(self, x, y):
-        true_screen_length = left_bottom[0] - right_top[0]
-        true_screen_width = right_top[1] - left_bottom[1]
-        screen_length = screen_left_bottom[1] - screen_right_top[1]
-        screen_width = screen_right_top[0] - screen_left_bottom[0]
-        x_coor = right_top[0] + int(((y-top_padding) / screen_length) * true_screen_length) # x_coor from 150 to 300
-        y_coor = int(((x-left_padding) / screen_width) * true_screen_width) # y_coor from 0 to 65
-        return x_coor, y_coor
-
     def click_callback(self, event):
         x, y = event.x, event.y
         old_str = self.log.get()
         strs = f"Action: Click  X: {x}  Y: {y}"
         self.log.set(old_str + '\n' + strs)
-        x_fix, y_fix = self.coordinate_fix(x, y)
+        x_fix, y_fix = coordinate_fix(x, y, self.record_config)
         frame = self.get_one_picture()
         save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
         if self.record_flag:
-            step = Step("Click", x, y, x_fix, y_fix, save_name)
+            step = Step("Click", int(x*3.34), int(y*3.34), x_fix, y_fix, save_name)
             self.steps.append(step)
             image_writer = Image.fromarray(frame).save(save_name, quality=95, subsampling=0)
             logger.debug("Click Image Saved")
@@ -187,11 +190,11 @@ class Controller(object):
         strs = f"Action: LongPress  X: {x}  Y: {y}"
         self.log.set(old_str + '\n' + strs)
         self.log.set(old_str + '\n' + strs)
-        x_fix, y_fix = self.coordinate_fix(x, y)
+        x_fix, y_fix = coordinate_fix(x, y, self.record_config)
         frame = self.get_one_picture()
         save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
         if self.record_flag:
-            step = Step("LongPress", x, y, x_fix, y_fix, save_name)
+            step = Step("LongPress", int(x*3.34), int(y*3.34), x_fix, y_fix, save_name)
             self.steps.append(step)
             image_writer = Image.fromarray(frame).save(save_name, quality=95, subsampling=0)
             logger.debug("LongPress Image Saved")
@@ -201,6 +204,7 @@ class Controller(object):
 
     def update(self):
         frame = self.get_one_picture()
+        # logger.debug(str(type(frame)))
         frame = cv2.resize(frame, (348, 696), interpolation=cv2.INTER_CUBIC)
         frame = ImageTk.PhotoImage(Image.fromarray(frame))
         self.real_time_image = frame
@@ -230,7 +234,6 @@ class Controller(object):
         label.place(x=345, y=0, width=300, height=740)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-
 
 # 多线程
 class CreateThreading(threading.Thread):
