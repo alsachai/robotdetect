@@ -8,9 +8,10 @@ class RobotController(object):
         self.swift = SwiftAPI()
         self.move_speed = 80
         self.press_distance = 10 # 按压力度
+        # self.swift.set_position(z=60, speed=100, wait=False, timeout=10, cmd='G1')
 
     def reset(self):
-        logger.debug("Robot Reset")
+        logger.debug("Loading Robot Drivers...")
         self.swift.set_position(x=150, y=0, z=100, speed=self.move_speed, wait=False, timeout=10, cmd='G0')
         self.swift.flush_cmd()
         # time.sleep(wait_time)
@@ -43,7 +44,7 @@ class RobotController(object):
         x = coor[0]
         y = coor[1]
         z = coor[2]
-        self.swift.set_position(x=x, y=y, z=z - 5, speed=self.move_speed, wait=False, timeout=10, cmd='G0')
+        self.swift.set_position(x=x, y=y, z=z, speed=self.move_speed, wait=False, timeout=10, cmd='G0')
         self.swift.flush_cmd()
         time.sleep(1)
         self.swift.set_position(z=z + self.press_distance, speed=100, wait=False, timeout=10, cmd='G1')

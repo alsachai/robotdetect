@@ -2,19 +2,11 @@
     "steps": [
         {
             "action": "Click",
-            "x": 213,
-            "y": 557,
-            "x_fix": 180,
-            "y_fix": 4,
-            "screenshot_name": "step-1116171400.jpg"
-        },
-        {
-            "action": "Click",
-            "x": 541,
-            "y": 895,
-            "x_fix": 205,
-            "y_fix": 30,
-            "screenshot_name": "step-1116171404.jpg"
+            "x": 254,
+            "y": 580,
+            "x_fix": 215,
+            "y_fix": 15,
+            "screenshot_name": "step-1127102651.jpg"
         }
     ]
 }
