@@ -6,7 +6,7 @@ eles = json.loads(open('test.json', encoding = 'utf-8').read())
 # step_1 = steps['steps'][0]
 # step_2 = steps['steps'][1]
 
-img_1 = cv2.imread("step-1127102651.jpg")
+img_1 = cv2.imread("tmp.jpg")
 # img_1_rec = cv2.rectangle(img_1, (int(step_1['x']) - 30, int(step_1['y']) + 30), (int(step_1['x'] + 30), int(step_1['y']) - 30), (255,0,0),2)
 # x = int(int(step_1['x']))
 # y = int(int(step_1['y']))

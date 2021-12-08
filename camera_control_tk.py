@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.font
 from logzero import logger
+import logzero
 from PIL import Image, ImageTk
 # from camera_config import setup_camera
 import mvsdk
@@ -12,6 +13,10 @@ import time
 import json
 from utils import send_requests, coordinate_fix, search_contain_box, \
     base64_encode, replay_coordinate_fix
+
+log_format = '%(color)s[%(levelname)1.1s %(module)s:%(lineno)d]%(end_color)s %(message)s'
+formatter = logzero.LogFormatter(fmt=log_format)
+logzero.setup_default_logger(formatter=formatter)
 
 ## X: [150, 350] Y: [0,80]
 timer = None

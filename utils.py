@@ -4,6 +4,10 @@ import base64
 import cv2
 import numpy as np
 import json
+import logzero
+log_format = '%(color)s[%(levelname)1.1s %(module)s:%(lineno)d]%(end_color)s %(message)s'
+formatter = logzero.LogFormatter(fmt=log_format)
+logzero.setup_default_logger(formatter=formatter)
 
 SAVED_SCREENSHOT_RESO = [1920,1080]
 
@@ -21,18 +25,6 @@ def coordinate_fix(x, y, config):
     screen_length = screen_right_bottom[1] - screen_left_top[1]
     screen_width = screen_right_bottom[0] - screen_left_top[0]
 
-    # left_bottom = config['left_bottom']
-    # right_top = config['right_top']
-    # screen_left_bottom = config['screen_left_bottom']
-    # screen_right_top = config['screen_right_top']
-    # offset = config['offset']
-    #
-    # left_padding = screen_left_bottom[0]
-    # top_padding = screen_right_top[1]
-    # true_screen_length = left_bottom[0] - right_top[0]
-    # true_screen_width = right_top[1] - left_bottom[1]
-    # screen_length = screen_left_bottom[1] - screen_right_top[1]
-    # screen_width = screen_right_top[0] - screen_left_bottom[0]
     x_coor = left_top[0] + int(((y - top_padding) / screen_length) * true_screen_length)  # x_coor from 150 to 300
     y_coor = left_top[1] + int(((x - left_padding) / screen_width) * true_screen_width)  # y_coor from 0 to 65
     return x_coor - offset, y_coor - offset
@@ -100,7 +92,7 @@ def search_contain_box(x, y, raw_pairs, img_path):
                 logger.debug("write image")
                 ele_2 = pair['ele_2']
                 x_min, x_max, y_min, y_max = ele_2['col_min'], ele_2['col_max'], ele_2['row_min'], ele_2['row_max']
-                # cv2.rectangle(img1, (x_min, y_min), (x_max, y_max), (0, 0, 255), 4)
+                cv2.rectangle(img1, (x_min, y_min), (x_max, y_max), (0, 0, 255), 4)
                 cv2.imwrite(img_path + ".png", img1)
                 logger.debug(f"{x} {y} colmin: {ele_2['col_min']} colmax: {ele_2['col_max']} rowmin: {ele_2['row_min']} rowmax: {ele_2['row_max']}")
                 return int((x_min + x_max)/2), int((y_min + y_max)/2)
