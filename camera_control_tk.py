@@ -165,7 +165,7 @@ class Controller(object):
                 self.robot.click([pair_x_2, pair_y_2, self.replay_config['height']])
             elif step['action'] == "LongPress":
                 self.robot.longPress([pair_x_2, pair_y_2, self.replay_config['height']])
-            time.sleep(2)
+            time.sleep(3)
         logger.debug("Replay Completed")
 
     def thread_robot_play(self, action, x, y, z):

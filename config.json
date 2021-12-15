@@ -1,20 +1,18 @@
-
-
 {
     "replay_config": {
-        "height": 17,
-        "left_top": [188,0],
-        "right_bottom": [331,59],
-        "screen_left_top": [42,65],
-        "screen_right_bottom": [263,559],
+        "height": 16,
+        "left_top": [160,0],
+        "right_bottom": [340,83],
+        "screen_left_top": [62,63],
+        "screen_right_bottom": [285,559],
         "offset": 0
     },
     "record_config": {
-        "height": 19,
-        "left_top": [188,0],
-        "right_bottom": [334,61],
-        "screen_left_top": [42,65],
-        "screen_right_bottom": [272,559],
+        "height": 16,
+        "left_top": [160,0],
+        "right_bottom": [340,83],
+        "screen_left_top": [62,63],
+        "screen_right_bottom": [285,559],
         "offset": 0
     }
 }

@@ -70,6 +70,7 @@ def search_contain_box(x, y, raw_pairs, img_path):
     # ratio_2 = 900/618
     ratio_2 = 1.456
     img1 = cv2.imread(img_path)
+    img2 = cv2.imread("tmp.jpg")
     for pair in pairs:
         ele = pair['ele_1']
         cv2.circle(img1, (x, y), 20, (0, 255, 0), 5)
@@ -91,13 +92,14 @@ def search_contain_box(x, y, raw_pairs, img_path):
                 logger.debug('find pair')
                 logger.debug("write image")
                 ele_2 = pair['ele_2']
+                # cv2.rectangle(img2, (int(x_min * ratio), int(y_min * ratio)), (int(x_max * ratio), int(y_max * ratio)), (0, 0, 255), 4)
                 x_min, x_max, y_min, y_max = ele_2['col_min'], ele_2['col_max'], ele_2['row_min'], ele_2['row_max']
-                cv2.rectangle(img1, (x_min, y_min), (x_max, y_max), (0, 0, 255), 4)
-                cv2.imwrite(img_path + ".png", img1)
+                cv2.rectangle(img2, (int(x_min * ratio), int(y_min * ratio)), (int(x_max * ratio), int(y_max * ratio)), (0, 0, 255), 4)
+                cv2.imwrite(img_path + ".png", img2)
                 logger.debug(f"{x} {y} colmin: {ele_2['col_min']} colmax: {ele_2['col_max']} rowmin: {ele_2['row_min']} rowmax: {ele_2['row_max']}")
                 return int((x_min + x_max)/2), int((y_min + y_max)/2)
             else:
-                logger.error("pair miss")
+                logger.warning("pair miss")
     logger.debug("write image")
     cv2.imwrite(img_path + ".png", img1)
     # cv2.imwrite(img_path + ".png", img1)
