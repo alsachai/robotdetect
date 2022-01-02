@@ -100,7 +100,7 @@ class Controller(object):
     def reload_config(self):
         content = json.loads(open("config.json").read())
         logger.debug("Load config successfully!")
-        self.record_config, self.replay_config = content['record_config'], content['replay_config']
+        self.record_config, self.replay_config = content['record_config'], content['record_config']
 
     def on_closing(self):
         # mvsdk.CameraUnInit(self.hCamera)
@@ -152,12 +152,7 @@ class Controller(object):
             logger.debug("sending matching request")
             pair_result = send_requests(record_figure_base64, replay_figure_base64)
             logger.debug("matching request received")
-            # logger.debug(f"{type(step)}")
-            # try:
             pair_x, pair_y = search_contain_box(step['x'], step['y'], pair_result, step['screenshot_name'])
-            # except TypeError:
-            #     logger.error("Step Coordinates NOT Matched")
-            #     break
             pair_x_2, pair_y_2 = replay_coordinate_fix(pair_x, pair_y)
             pair_x_2, pair_y_2 = coordinate_fix(pair_x_2, pair_y_2, self.replay_config)
             logger.debug(f"{pair_x} {pair_y} {pair_x_2} {pair_y_2}")
@@ -208,7 +203,6 @@ class Controller(object):
             logger.debug("Click Image Saved")
         thread3 = threading.Thread(name = "Thread-3", target = self.thread_robot_play, args = ("Click", x_fix, y_fix, self.record_config['height']))
         thread3.start()
-        # self.robot.click([x_fix, y_fix, 60])
 
     def doubleclick_callback(self, event):
         pass
@@ -230,7 +224,6 @@ class Controller(object):
             logger.debug("LongPress Image Saved")
         thread4 = threading.Thread(name="Thread-4", target=self.thread_robot_play, args=("LongPress", x_fix, y_fix, self.record_config['height']))
         thread4.start()
-        # self.robot.longPress([x_fix, y_fix, 60])
 
     def update(self):
         frame = self.get_one_picture()

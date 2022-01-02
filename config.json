@@ -1,14 +1,4 @@
-
-
 {
-    "replay_config": {
-        "height": 17,
-        "left_top": [188,0],
-        "right_bottom": [331,59],
-        "screen_left_top": [42,65],
-        "screen_right_bottom": [263,559],
-        "offset": 0
-    },
     "record_config": {
         "height": 19,
         "left_top": [188,0],
