@@ -27,7 +27,7 @@ img_1 = cv2.imread("tmp.jpg")
 ratio = 2.4
 #
 for i in eles['ele_pairs']:
-    ele = i['ele_1']
+    ele = i['ele_2']
     col_min = int(ele['col_min'] * ratio)
     col_max = int(ele['col_max'] * ratio)
     row_min = int(ele['row_min'] * ratio)
