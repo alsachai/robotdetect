@@ -3,8 +3,6 @@ import tkinter.font
 from logzero import logger
 import logzero
 from PIL import Image, ImageTk
-# from camera_config import setup_camera
-import mvsdk
 import threading
 import numpy as np
 import cv2
@@ -18,7 +16,6 @@ log_format = '%(color)s[%(levelname)1.1s %(module)s:%(lineno)d]%(end_color)s %(m
 formatter = logzero.LogFormatter(fmt=log_format)
 logzero.setup_default_logger(formatter=formatter)
 
-## X: [150, 350] Y: [0,80]
 timer = None
 
 class Step(object):
@@ -53,7 +50,6 @@ class Controller(object):
         self.robot.reset()
         self.my_font = tkinter.font.Font(family='微软雅黑', size=10)
         self.log_font = tkinter.font.Font(family='微软雅黑', size=10)
-        # self.hCamera, self.pFrameBuffer = setup_camera()
 
         # init camera
         logger.debug("Loading Camera Drivers...")
@@ -65,7 +61,6 @@ class Controller(object):
         self.record_flag = False
         self.log = tk.StringVar()
         self.log.set('')
-        # self.real_time_image = self.get_one_picture()
         self.canvas = tk.Canvas(self.root, width=348, height=618)
         self.canvas.place(x=0, y=50)
         self.canvas.bind("<Button-1>", self.handleButtonPress)
@@ -79,32 +74,12 @@ class Controller(object):
         image = cv2.flip(image, 1)
         return image
 
-    # 老摄像头，已废弃
-    # def get_one_picture(self):
-    #     # get one frame from camera
-    #     pRawData, FrameHead = mvsdk.CameraGetImageBuffer(self.hCamera, 200)
-    #     mvsdk.CameraImageProcess(self.hCamera, pRawData, self.pFrameBuffer, FrameHead)
-    #     mvsdk.CameraReleaseImageBuffer(self.hCamera, pRawData)
-    #
-    #     frame_data = (mvsdk.c_ubyte * FrameHead.uBytes).from_address(self.pFrameBuffer)
-    #     frame = np.frombuffer(frame_data, dtype=np.uint8)
-    #     frame = frame.reshape(
-    #         (FrameHead.iHeight, FrameHead.iWidth, 1 if FrameHead.uiMediaType == mvsdk.CAMERA_MEDIA_TYPE_MONO8 else 3))
-    #
-    #     frame = cv2.flip(frame, 1, dst=None)
-    #     frame = frame[400:2700, 204:1364] # width: 1160 height: 2300
-    #     # image_writer = Image.fromarray(frame).save(f"test-{time.time()}.jpg", quality=95, subsampling=0)
-    #     # logger.debug(Image.fromarray(frame).size)
-    #     return frame
-
     def reload_config(self):
         content = json.loads(open("config.json").read())
         logger.debug("Load config successfully!")
         self.record_config, self.replay_config = content['record_config'], content['record_config']
 
     def on_closing(self):
-        # mvsdk.CameraUnInit(self.hCamera)
-        # mvsdk.CameraAlignFree(self.pFrameBuffer)
         self.root.destroy()
         self.robot.close_connect()
         logger.debug("Robot Disconnected")
@@ -120,7 +95,6 @@ class Controller(object):
                 output_str = {
                     "steps": list()
                 }
-                # logger.debug(self.steps)
                 for step in self.steps:
                     output_str['steps'].append(step.json_output())
                 output_str_json = json.dumps(output_str, indent=4).encode('utf-8').decode('utf-8')
@@ -144,8 +118,6 @@ class Controller(object):
         for step in self.replay_steps:
             logger.debug(f"REPLAY Action: {step['action']} {step['x_fix']} {step['y_fix']}")
             record_figure_base64 = base64_encode(step['screenshot_name'])
-            # realtime_image = Image.fromarray(self.get_one_picture()).save(f"tmp.jpg", quality=95, subsampling=0)
-            # frame = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
             realtime_image = self.get_one_picture()
             cv2.imwrite("tmp.jpg", realtime_image)
             replay_figure_base64 = base64_encode("tmp.jpg")
@@ -176,9 +148,7 @@ class Controller(object):
 
     def handleButtonPress(self, event):
         global timer
-        # timer = threading.Timer(0.8, self.longpress_callback(event))
         timer = time.time()
-        # timer.start()
 
     def handleButtonRelease(self, event):
         global timer
@@ -198,7 +168,6 @@ class Controller(object):
         if self.record_flag:
             step = Step("Click", int(x*(1080/348)), int(y*(1920/618)), x_fix, y_fix, save_name)
             self.steps.append(step)
-            # image_writer = Image.fromarray(frame).save(save_name, quality=95, subsampling=0)
             cv2.imwrite(save_name, frame)
             logger.debug("Click Image Saved")
         thread3 = threading.Thread(name = "Thread-3", target = self.thread_robot_play, args = ("Click", x_fix, y_fix, self.record_config['height']))
@@ -219,7 +188,6 @@ class Controller(object):
         if self.record_flag:
             step = Step("LongPress", int(x*(1080/348)), int(y*(1920/618)), x_fix, y_fix, save_name)
             self.steps.append(step)
-            # image_writer = Image.fromarray(frame).save(save_name, quality=95, subsampling=0)
             cv2.imwrite(save_name, frame)
             logger.debug("LongPress Image Saved")
         thread4 = threading.Thread(name="Thread-4", target=self.thread_robot_play, args=("LongPress", x_fix, y_fix, self.record_config['height']))
@@ -227,9 +195,7 @@ class Controller(object):
 
     def update(self):
         frame = self.get_one_picture()
-        # logger.debug(str(type(frame)))
         frame = cv2.resize(frame, (348, 618), interpolation=cv2.INTER_CUBIC)
-        # frame = ImageTk.PhotoImage(Image.fromarray(frame))
         frame = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
         self.real_time_image = frame
         self.canvas.create_image(0, 0, anchor="nw", image=self.real_time_image)
