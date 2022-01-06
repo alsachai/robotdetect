@@ -1,56 +1,30 @@
 ## Robot Controller
 
-
-
 This is a framework designed as a GUI controller for uarm robot arms and internet cameras.
 
-
-
 ## Requirements
-
-
 
 * python3
 
 * other packages
 
-
-
 ```python
 
-pip install logzero \
-
-    PIL \
-
-    threading \
-
-    opencv-python
+pip install logzero PIL threading opencv-python
 
 ```
-
-
 
 ## How to use
 
-
-
 #### Run controller panel
 
-
-
 ```python
-
 python3 camera_control_tk.py
-
 ```
-
-
 
 After you run the script `camera_control_tk.py`, you will see the controller panel:
 
-
 ![](readme_img/img_1.png)
-
 
 
 #### Buttons on the panel
@@ -80,11 +54,11 @@ After you run the script `camera_control_tk.py`, you will see the controller pan
 
 ```json
 {
-  "figure1": base64_figure_1, 
-  "figure2": base64_figure_2  
+  "figure1": base64_figure_1,
+  "figure2": base64_figure_2,
 }
 ```
-The `figure1` is the recorded screenshot, and the `figure2` is the screenshot when replaying.
+The `figure1` is the recorded screenshot, and the `figure2` is the screenshot when replaying. **Note that both screenshots are encoded in BASE64 format.**
 
 * Reset. Reset all recorded steps. This button is now **deprecated**.
 
