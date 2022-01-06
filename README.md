@@ -60,27 +60,16 @@ After you run the script `camera_control_tk.py`, you will see the controller pan
 ```json
 
 {
-
   "steps": [
-
     {
-
-      "action": "Click", // the action of your operation
-
-      "x": 254, // x coordinate in the streaming panel
-
-      "y": 580, // y coordinate in the streaming panel
-
-      "x_fix": 215, // x coordinate for the uarm arms
-
-      "y_fix": 15, // y coordinate for the uarm arms
-
-      "screenshot_name": "step-1127102651.jpg" // name of corresponding screenshot
-
+      "action": "Click",
+      "x": 254,
+      "y": 580,
+      "x_fix": 215, 
+      "y_fix": 15,
+      "screenshot_name": "step-1127102651.jpg" 
     }
-
   ]
-
 }
 
 ```
@@ -90,16 +79,12 @@ After you run the script `camera_control_tk.py`, you will see the controller pan
 * Replay. The `Replay` button is for guiding robot arms to replay the previously recorded steps. However, due to some disclosure issues, we don't have plans to open our replay code. You can try your own replay service with replacing the address of replay service at line 51 in file `utils.py`. The format of replaying request is listed in the following:
 
 ```json
-
 {
-
-  "figure1": base64_figure_1, // The recorded screenshot
-
-  "figure2": base64_figure_2  // The screenshot in replaying
-
+  "figure1": base64_figure_1, 
+  "figure2": base64_figure_2  
 }
-
 ```
+The `figure1` is the recorded screenshot, and the `figure2` is the screenshot when replaying.
 
 * Reset. Reset all recorded steps. This button is now **deprecated**.
 
