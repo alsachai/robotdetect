@@ -18,6 +18,8 @@ pip install logzero PIL threading opencv-python
 
 #### Run controller panel
 
+**Note**: make sure the uarm robot arms and camera are connected to the computer.
+
 ```python
 python3 camera_control_tk.py
 ```
