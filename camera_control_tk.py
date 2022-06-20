@@ -17,6 +17,7 @@ formatter = logzero.LogFormatter(fmt=log_format)
 logzero.setup_default_logger(formatter=formatter)
 
 timer = None
+step_path = "../arm_steps/keep-3/"
 
 class Step(object):
     def __init__(self, action, x, y, x_fix, y_fix, screenshot_name):
@@ -54,7 +55,7 @@ class Controller(object):
         # init camera
         logger.debug("Loading Camera Drivers...")
         self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2340)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         logger.debug("Camera Ready")
 
@@ -70,7 +71,11 @@ class Controller(object):
 
     def get_one_picture(self):
         _, image = self.cap.read()
+        cv2.imwrite("1.jpg", image)
+        # transpose逆时针旋转
         image = cv2.transpose(image)
+        cv2.imwrite("2.jpg", image)
+        # flip 1:水平翻转
         image = cv2.flip(image, 1)
         return image
 
@@ -105,7 +110,8 @@ class Controller(object):
 
     def replay(self):
         self.record_flag = False
-        steps = json.loads(open("steps.json").read())['steps']
+        steps = json.loads(open("steps.json").read())
+        # steps = json.loads(open(step_path + "output.json").read())
         if len(steps) == 0:
             logger.debug("Empty Steps")
             return
@@ -114,25 +120,49 @@ class Controller(object):
         thread1 = CreateThreading(2, "Thread-2", 2, self.__replay)
         thread1.start()
 
+    # caculate the relative coordinate on the screen
+    def rel_cor(self, bounds, config):
+        #emulator attributes
+        emu_width = 1080
+        emu_length = 2340
+        rel_x = int((bounds[1][0] + bounds[0][0])/2)
+        rel_y = int((bounds[1][1] + bounds[0][1])/2)
+        # x_ratio = rel_x/emu_width
+        # y_ratio = rel_y/emu_length
+        # screen_left_top = config['screen_left_top']
+        # screen_right_bottom = config['screen_right_bottom']
+        # screen_length = screen_right_bottom[1] - screen_left_top[1]
+        # screen_width = screen_right_bottom[0] - screen_left_top[0]
+        # x = screen_left_top[0] + screen_width * x_ratio
+        # y = screen_left_top[1] + screen_length * y_ratio
+        return rel_x, rel_y
+
     def __replay(self):
+        crop_size = (1080, 2340)
         for step in self.replay_steps:
-            logger.debug(f"REPLAY Action: {step['action']} {step['x_fix']} {step['y_fix']}")
-            record_figure_base64 = base64_encode(step['screenshot_name'])
+            print(step)
+            logger.debug(f"REPLAY Action: {step['tag']} {step['event_type']} {step['bounds']}")
+            screenshot_name = step_path + step['tag']+".jpg"
+            record_figure_base64 = base64_encode(screenshot_name)
+            # record_figure_base64 = cv2.resize(record_figure_base64, crop_size, interpolation = cv2.INTER_CUBIC)
             realtime_image = self.get_one_picture()
+            realtime_image = cv2.resize(realtime_image, crop_size, interpolation = cv2.INTER_CUBIC)
             cv2.imwrite("tmp.jpg", realtime_image)
             replay_figure_base64 = base64_encode("tmp.jpg")
             logger.debug("sending matching request")
             pair_result = send_requests(record_figure_base64, replay_figure_base64)
             logger.debug("matching request received")
-            pair_x, pair_y = search_contain_box(step['x'], step['y'], pair_result, step['screenshot_name'])
+            x, y = self.rel_cor(step['bounds'], self.replay_config)
+            logger.debug(f"x:{x}, y:{y}")
+            pair_x, pair_y = search_contain_box(x, y, pair_result, screenshot_name)
             pair_x_2, pair_y_2 = replay_coordinate_fix(pair_x, pair_y)
             pair_x_2, pair_y_2 = coordinate_fix(pair_x_2, pair_y_2, self.replay_config)
             logger.debug(f"{pair_x} {pair_y} {pair_x_2} {pair_y_2}")
-            if step['action'] == "Click":
+            if step['event_type'] == "touch":
                 self.robot.click([pair_x_2, pair_y_2, self.replay_config['height']])
-            elif step['action'] == "LongPress":
+            elif step['action'] == "long_touch":
                 self.robot.longPress([pair_x_2, pair_y_2, self.replay_config['height']])
-            time.sleep(3)
+            time.sleep(10)
         logger.debug("Replay Completed")
 
     def thread_robot_play(self, action, x, y, z):
@@ -166,7 +196,7 @@ class Controller(object):
         frame = self.get_one_picture()
         save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
         if self.record_flag:
-            step = Step("Click", int(x*(1080/348)), int(y*(1920/618)), x_fix, y_fix, save_name)
+            step = Step("Click", int(x*(1080/348)), int(y*(2340/618)), x_fix, y_fix, save_name)
             self.steps.append(step)
             cv2.imwrite(save_name, frame)
             logger.debug("Click Image Saved")
@@ -186,7 +216,7 @@ class Controller(object):
         frame = self.get_one_picture()
         save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
         if self.record_flag:
-            step = Step("LongPress", int(x*(1080/348)), int(y*(1920/618)), x_fix, y_fix, save_name)
+            step = Step("LongPress", int(x*(1080/348)), int(y*(2340/618)), x_fix, y_fix, save_name)
             self.steps.append(step)
             cv2.imwrite(save_name, frame)
             logger.debug("LongPress Image Saved")

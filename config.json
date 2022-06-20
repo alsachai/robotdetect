@@ -1,10 +1,10 @@
 {
     "record_config": {
-        "height": 16,
-        "left_top": [160,0],
-        "right_bottom": [340,83],
-        "screen_left_top": [62,63],
-        "screen_right_bottom": [285,559],
+        "height": -46.5,
+        "left_top": [0,0],
+        "right_bottom": [348,618],
+        "screen_left_top": [116,0],
+        "screen_right_bottom": [348,508],
         "offset": 0
     }
 }
