@@ -1,3 +1,4 @@
+from operator import truediv
 import tkinter as tk
 import tkinter.font
 from logzero import logger
@@ -20,22 +21,18 @@ timer = None
 step_path = "../arm_steps/keep-3/"
 
 class Step(object):
-    def __init__(self, action, x, y, x_fix, y_fix, screenshot_name):
+    def __init__(self, screenshot_name, action, x, y):
         self.action = action
         self.x = x
         self.y = y
-        self.x_fix = x_fix
-        self.y_fix = y_fix
         self.screenshot_name = screenshot_name
 
     def json_output(self):
         output = {
-            "action": self.action,
+            "tag": self.screenshot_name,
+            "event_type": self.action,
             "x": self.x,
-            "y": self.y,
-            "x_fix": self.x_fix,
-            "y_fix": self.y_fix,
-            "screenshot_name": self.screenshot_name
+            "y": self.y
         }
         return output
 
@@ -97,14 +94,20 @@ class Controller(object):
         else:
             self.record_flag = False
             if len(self.steps) > 0:
-                output_str = {
-                    "steps": list()
-                }
+                output_str = list()
                 for step in self.steps:
-                    output_str['steps'].append(step.json_output())
-                output_str_json = json.dumps(output_str, indent=4).encode('utf-8').decode('utf-8')
+                #     with open('steps.json','r') as fr:
+                #         text = json.load(fr)
+                #         fr.close()
+                #     text.append(step.json_output())
+                #     with open('steps.json','w') as fw:
+                #         fw.write(json.dumps(text))
+                #         fw.close()
+                # output_str_json = json.dumps(text, indent=4).encode('utf-8').decode('utf-8')
+                    output_str.append(step.json_output())
+
                 with open('steps.json', 'w') as f:
-                    print(output_str_json, file = f)
+                    json.dump(output_str, f, indent=4)
             self.log.set("End Recording")
         logger.debug(self.record_flag)
 
@@ -116,6 +119,7 @@ class Controller(object):
             logger.debug("Empty Steps")
             return
         self.replay_steps = steps
+        logger.debug(f"steps:{self.replay_steps}")
         logger.debug("Start Replay")
         thread1 = CreateThreading(2, "Thread-2", 2, self.__replay)
         thread1.start()
@@ -124,7 +128,7 @@ class Controller(object):
     def rel_cor(self, bounds, config):
         #emulator attributes
         emu_width = 1080
-        emu_length = 2340
+        emu_length = 1920
         rel_x = int((bounds[1][0] + bounds[0][0])/2)
         rel_y = int((bounds[1][1] + bounds[0][1])/2)
         # x_ratio = rel_x/emu_width
@@ -138,21 +142,27 @@ class Controller(object):
         return rel_x, rel_y
 
     def __replay(self):
-        crop_size = (1080, 2340)
+        crop_size = (1080, 1920)
         for step in self.replay_steps:
-            print(step)
-            logger.debug(f"REPLAY Action: {step['tag']} {step['event_type']} {step['bounds']}")
-            screenshot_name = step_path + step['tag']+".jpg"
+            # if is_record == True:
+            logger.debug(f"REPLAY Action: {step['tag']} {step['event_type']} {step['x']} {step['y']}")
+            screenshot_name = step['tag']+".jpg"
             record_figure_base64 = base64_encode(screenshot_name)
-            # record_figure_base64 = cv2.resize(record_figure_base64, crop_size, interpolation = cv2.INTER_CUBIC)
+            x = step['x']
+            y = step['y']
+            # else:
+                # logger.debug(f"REPLAY Action: {step['tag']} {step['event_type']} {step['bounds']}")
+                # screenshot_name = step_path + step['tag']+".jpg"
+                # record_figure_base64 = base64_encode(screenshot_name)
+                # record_figure_base64 = cv2.resize(record_figure_base64, crop_size, interpolation = cv2.INTER_CUBIC)
+                # x, y = self.rel_cor(step['bounds'], self.replay_config)
             realtime_image = self.get_one_picture()
-            realtime_image = cv2.resize(realtime_image, crop_size, interpolation = cv2.INTER_CUBIC)
+            # realtime_image = cv2.resize(realtime_image, crop_size, interpolation = cv2.INTER_CUBIC)
             cv2.imwrite("tmp.jpg", realtime_image)
             replay_figure_base64 = base64_encode("tmp.jpg")
             logger.debug("sending matching request")
             pair_result = send_requests(record_figure_base64, replay_figure_base64)
             logger.debug("matching request received")
-            x, y = self.rel_cor(step['bounds'], self.replay_config)
             logger.debug(f"x:{x}, y:{y}")
             pair_x, pair_y = search_contain_box(x, y, pair_result, screenshot_name)
             pair_x_2, pair_y_2 = replay_coordinate_fix(pair_x, pair_y)
@@ -194,9 +204,10 @@ class Controller(object):
         self.log.set(old_str + '\n' + strs)
         x_fix, y_fix = coordinate_fix(x, y, self.record_config)
         frame = self.get_one_picture()
-        save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
+        tag = f"{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}"
+        save_name = f"{tag}.jpg"
         if self.record_flag:
-            step = Step("Click", int(x*(1080/348)), int(y*(2340/618)), x_fix, y_fix, save_name)
+            step = Step(tag, "touch", int(x*(1080/348)), int(y*(1920/618)))
             self.steps.append(step)
             cv2.imwrite(save_name, frame)
             logger.debug("Click Image Saved")
@@ -214,9 +225,10 @@ class Controller(object):
         self.log.set(old_str + '\n' + strs)
         x_fix, y_fix = coordinate_fix(x, y, self.record_config)
         frame = self.get_one_picture()
-        save_name = f"step-{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}.jpg"
+        tag = f"{time.strftime('%m%d%H%M%S',time.localtime(time.time()))}"
+        save_name = f"{tag}.jpg"
         if self.record_flag:
-            step = Step("LongPress", int(x*(1080/348)), int(y*(2340/618)), x_fix, y_fix, save_name)
+            step = Step(save_name, "long_touch", int(x*(1080/348)), int(y*(1920/618)))
             self.steps.append(step)
             cv2.imwrite(save_name, frame)
             logger.debug("LongPress Image Saved")
